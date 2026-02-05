@@ -1,1 +1,21 @@
+# Rust
 /target
+Cargo.lock
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Testing
+*.profraw
+*.profdata
+
+# Documentation
+/doc
