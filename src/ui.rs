@@ -83,13 +83,13 @@ fn render_table_view(frame: &mut Frame, app: &App, area: Rect) {
             let mut style = Style::default().add_modifier(Modifier::BOLD);
 
             // Highlight sorted column
-            let is_sorted = match (i, app.sort_column) {
-                (0, SortColumn::FdCount) => true,
-                (1, SortColumn::Pid) => true,
-                (2, SortColumn::Owner) => true,
-                (5, SortColumn::Command) => true,
-                _ => false,
-            };
+            let is_sorted = matches!(
+                (i, app.sort_column),
+                (0, SortColumn::FdCount)
+                    | (1, SortColumn::Pid)
+                    | (2, SortColumn::Owner)
+                    | (5, SortColumn::Command)
+            );
 
             if is_sorted {
                 style = style.fg(Color::Yellow);

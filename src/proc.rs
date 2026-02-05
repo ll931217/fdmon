@@ -1,7 +1,7 @@
 use anyhow::{Context, Result};
 use serde::Serialize;
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ProcessInfo {
@@ -110,7 +110,7 @@ fn read_process_info(pid: u32, _current_uid: u32) -> Result<ProcessInfo> {
 }
 
 /// Reads PPID from /proc/{pid}/stat (field 4)
-fn read_ppid(proc_path: &PathBuf) -> Result<u32> {
+fn read_ppid(proc_path: &Path) -> Result<u32> {
     let stat_path = proc_path.join("stat");
     let content = fs::read_to_string(stat_path).context("Failed to read stat")?;
 
@@ -128,7 +128,7 @@ fn read_ppid(proc_path: &PathBuf) -> Result<u32> {
 }
 
 /// Reads UID from /proc/{pid}/status
-fn read_uid(proc_path: &PathBuf) -> Result<u32> {
+fn read_uid(proc_path: &Path) -> Result<u32> {
     let status_path = proc_path.join("status");
     let content = fs::read_to_string(status_path).context("Failed to read status")?;
 
@@ -152,7 +152,7 @@ fn uid_to_username(uid: u32) -> String {
 }
 
 /// Reads command from /proc/{pid}/cmdline
-fn read_command(proc_path: &PathBuf) -> Result<String> {
+fn read_command(proc_path: &Path) -> Result<String> {
     let cmdline_path = proc_path.join("cmdline");
     let content = fs::read(cmdline_path).context("Failed to read cmdline")?;
 
@@ -176,7 +176,7 @@ fn read_command(proc_path: &PathBuf) -> Result<String> {
 }
 
 /// Counts file descriptors in /proc/{pid}/fd/
-fn count_fds(proc_path: &PathBuf) -> usize {
+fn count_fds(proc_path: &Path) -> usize {
     let fd_path = proc_path.join("fd");
     fs::read_dir(fd_path)
         .map(|entries| entries.filter_map(Result::ok).count())
@@ -184,7 +184,7 @@ fn count_fds(proc_path: &PathBuf) -> usize {
 }
 
 /// Reads soft limit from /proc/{pid}/limits
-fn read_soft_limit(proc_path: &PathBuf) -> Option<u64> {
+fn read_soft_limit(proc_path: &Path) -> Option<u64> {
     let limits_path = proc_path.join("limits");
     let content = fs::read_to_string(limits_path).ok()?;
 
@@ -202,7 +202,7 @@ fn read_soft_limit(proc_path: &PathBuf) -> Option<u64> {
 }
 
 /// Reads CWD from /proc/{pid}/cwd symlink
-fn read_cwd(proc_path: &PathBuf) -> String {
+fn read_cwd(proc_path: &Path) -> String {
     let cwd_path = proc_path.join("cwd");
     fs::read_link(cwd_path)
         .ok()

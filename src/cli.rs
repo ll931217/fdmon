@@ -207,8 +207,8 @@ fn execute_list(
         }
         OutputFormat::Table => {
             println!(
-                "{:<8} {:<8} {:<12} {:<8} {:<8} {}",
-                "FDS", "PID", "OWNER", "LIMIT", "USAGE%", "COMMAND"
+                "{:<8} {:<8} {:<12} {:<8} {:<8} COMMAND",
+                "FDS", "PID", "OWNER", "LIMIT", "USAGE%"
             );
             println!("{}", "-".repeat(72));
             for entry in entries {
@@ -325,7 +325,7 @@ fn execute_detail(format: OutputFormat, pid: u32, current_uid: u32) -> Result<()
             );
             println!("Timestamp: {}", detail.timestamp);
             println!();
-            println!("{:<6} {:<12} {}", "FD", "TYPE", "TARGET");
+            println!("{:<6} {:<12} TARGET", "FD", "TYPE");
             println!("{}", "-".repeat(72));
             for fd in detail.fds {
                 println!("{:<6} {:<12} {}", fd.fd_num, fd.fd_type, fd.target);
@@ -456,8 +456,8 @@ fn execute_summary(format: OutputFormat, current_uid: u32) -> Result<()> {
         }
         OutputFormat::Table => {
             println!(
-                "{:<16} {:<8} {:<12} {}",
-                "USERNAME", "UID", "TOTAL_FDS", "PROCESSES"
+                "{:<16} {:<8} {:<12} PROCESSES",
+                "USERNAME", "UID", "TOTAL_FDS"
             );
             println!("{}", "-".repeat(72));
             for summary in summaries {

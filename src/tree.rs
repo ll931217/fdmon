@@ -42,10 +42,10 @@ pub fn build_tree(processes: &[ProcessInfo]) -> Vec<TreeNode> {
     // Find root processes (ppid == 0 or ppid not in process list)
     let mut roots = Vec::new();
     for process in processes {
-        if process.ppid == 0 || !process_map.contains_key(&process.ppid) {
-            if marked_pids.contains(&process.pid) {
-                roots.push(process.pid);
-            }
+        if (process.ppid == 0 || !process_map.contains_key(&process.ppid))
+            && marked_pids.contains(&process.pid)
+        {
+            roots.push(process.pid);
         }
     }
 
