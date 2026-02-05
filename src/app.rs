@@ -124,7 +124,9 @@ impl App {
             self.user_summaries = compute_user_summaries(&self.processes);
             // Clamp selection to valid range
             if !self.user_summaries.is_empty() {
-                self.user_summary_selected = self.user_summary_selected.min(self.user_summaries.len() - 1);
+                self.user_summary_selected = self
+                    .user_summary_selected
+                    .min(self.user_summaries.len() - 1);
             }
         }
 
