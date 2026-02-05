@@ -27,6 +27,8 @@ pub fn render(frame: &mut Frame, app: &App) {
         render_search_input(frame, app);
     } else if app.input_mode == InputMode::KillConfirm {
         render_kill_confirm(frame, app);
+    } else if app.input_mode == InputMode::UserSummary {
+        render_user_summary(frame, app);
     }
 }
 
@@ -335,7 +337,7 @@ fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
         Paragraph::new(msg.clone()).style(Style::default().fg(color))
     } else {
         let keys =
-            "q:Quit  K:Kill  Tab:View  /:Search  Enter:Details  ↑↓:Nav  s:Sort  +/-:Interval";
+            "q:Quit  K:Kill  Tab:View  /:Search  u:Users  Enter:Details  ↑↓:Nav  s:Sort  +/-:Interval";
         Paragraph::new(keys).style(Style::default().fg(Color::Gray))
     };
 
@@ -424,6 +426,102 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
             Constraint::Percentage((100 - percent_x) / 2),
         ])
         .split(popup_layout[1])[1]
+}
+
+fn render_user_summary(frame: &mut Frame, app: &App) {
+    let area = centered_rect(70, 60, frame.area());
+
+    // Clear the background area first
+    frame.render_widget(
+        Block::default().style(Style::default().bg(Color::Black)),
+        area,
+    );
+
+    let title = "Per-User FD Summary (Esc to close)";
+
+    // Calculate visible height for auto-scroll
+    // area.height - 2 (borders) - 2 (header + margin)
+    let visible_height = area.height.saturating_sub(4) as usize;
+
+    // Compute scroll offset to keep selected row visible
+    let scroll_offset = if !app.user_summaries.is_empty() && visible_height > 0 {
+        let selected = app.user_summary_selected;
+        if selected < visible_height {
+            0
+        } else {
+            selected.saturating_sub(visible_height).saturating_add(1)
+        }
+    } else {
+        0
+    };
+
+    // Header row
+    let header_cells = ["User", "UID", "Total FDs", "Processes"]
+        .iter()
+        .map(|h| Cell::from(*h).style(Style::default().add_modifier(Modifier::BOLD)));
+
+    let header = Row::new(header_cells)
+        .style(Style::default().fg(Color::Yellow).bg(Color::Black))
+        .bottom_margin(1);
+
+    // Data rows with auto-scroll - pad with empty rows to fill visible area
+    let mut row_vec: Vec<Row> = app
+        .user_summaries
+        .iter()
+        .enumerate()
+        .skip(scroll_offset)
+        .take(visible_height)
+        .map(|(i, summary)| {
+            let cells = vec![
+                Cell::from(summary.username.clone()),
+                Cell::from(summary.uid.to_string()),
+                Cell::from(summary.total_fds.to_string()),
+                Cell::from(summary.process_count.to_string()),
+            ];
+
+            let style = if i == app.user_summary_selected {
+                Style::default()
+                    .bg(Color::DarkGray)
+                    .add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().bg(Color::Black)
+            };
+
+            Row::new(cells).style(style)
+        })
+        .collect();
+
+    // Pad with empty rows to fill the visible area with black background
+    let current_rows = row_vec.len();
+    for _ in current_rows..visible_height {
+        let empty_cells = vec![
+            Cell::from(""),
+            Cell::from(""),
+            Cell::from(""),
+            Cell::from(""),
+        ];
+        row_vec.push(Row::new(empty_cells).style(Style::default().bg(Color::Black)));
+    }
+
+    let table = Table::new(
+        row_vec,
+        [
+            Constraint::Length(16), // User
+            Constraint::Length(8),  // UID
+            Constraint::Length(12), // Total FDs
+            Constraint::Length(12), // Processes
+        ],
+    )
+    .header(header)
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .title(title)
+            .style(Style::default().bg(Color::Black).fg(Color::White)),
+    )
+    .style(Style::default().bg(Color::Black));
+
+    frame.render_widget(table, area);
 }
 
 fn truncate(s: &str, max_len: usize) -> String {

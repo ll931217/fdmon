@@ -19,6 +19,7 @@ pub enum InputMode {
     Normal,
     Search,
     KillConfirm,
+    UserSummary,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -33,6 +34,15 @@ pub enum SortColumn {
 pub enum StatusLevel {
     Info,
     Error,
+}
+
+#[derive(Debug, Clone)]
+#[allow(dead_code)] // Fields will be used in render_user_summary implementation
+pub struct UserSummary {
+    pub username: String,
+    pub uid: u32,
+    pub total_fds: usize,
+    pub process_count: usize,
 }
 
 pub struct App {
@@ -54,6 +64,8 @@ pub struct App {
     pub last_detail_pid: Option<u32>,
     pub current_uid: u32,
     pub running: bool,
+    pub user_summaries: Vec<UserSummary>,
+    pub user_summary_selected: usize,
 }
 
 impl App {
@@ -82,6 +94,8 @@ impl App {
             last_detail_pid: None,
             current_uid,
             running: true,
+            user_summaries: Vec::new(),
+            user_summary_selected: 0,
         })
     }
 
@@ -105,6 +119,15 @@ impl App {
             }
         }
 
+        // Refresh user summaries if popup is open
+        if self.input_mode == InputMode::UserSummary {
+            self.user_summaries = compute_user_summaries(&self.processes);
+            // Clamp selection to valid range
+            if !self.user_summaries.is_empty() {
+                self.user_summary_selected = self.user_summary_selected.min(self.user_summaries.len() - 1);
+            }
+        }
+
         Ok(())
     }
 
@@ -114,6 +137,7 @@ impl App {
             InputMode::Normal => self.handle_normal_mode(key),
             InputMode::Search => self.handle_search_mode(key),
             InputMode::KillConfirm => self.handle_kill_confirm_mode(key),
+            InputMode::UserSummary => self.handle_user_summary_mode(key),
         }
     }
 
@@ -149,6 +173,9 @@ impl App {
             }
             KeyCode::Char('-') => {
                 self.adjust_refresh_interval(-1);
+            }
+            KeyCode::Char('u') if !key.modifiers.contains(KeyModifiers::CONTROL) => {
+                self.open_user_summary();
             }
             KeyCode::PageUp | KeyCode::Char('u')
                 if key.modifiers.contains(KeyModifiers::CONTROL) =>
@@ -419,5 +446,172 @@ impl App {
             let max_scroll = self.fd_details.len().saturating_sub(1);
             self.detail_scroll_offset = (self.detail_scroll_offset + 5).min(max_scroll);
         }
+    }
+
+    /// Opens the user summary popup
+    fn open_user_summary(&mut self) {
+        self.user_summaries = compute_user_summaries(&self.processes);
+        self.user_summary_selected = 0;
+        self.input_mode = InputMode::UserSummary;
+    }
+
+    /// Handles key input in user summary mode
+    fn handle_user_summary_mode(&mut self, key: KeyEvent) -> Result<()> {
+        match key.code {
+            KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('u') => {
+                self.input_mode = InputMode::Normal;
+            }
+            KeyCode::Char('j') | KeyCode::Down => {
+                if !self.user_summaries.is_empty() {
+                    self.user_summary_selected =
+                        (self.user_summary_selected + 1).min(self.user_summaries.len() - 1);
+                }
+            }
+            KeyCode::Char('k') | KeyCode::Up => {
+                if self.user_summary_selected > 0 {
+                    self.user_summary_selected -= 1;
+                }
+            }
+            _ => {}
+        }
+
+        Ok(())
+    }
+}
+
+/// Computes per-user FD summaries from process list
+fn compute_user_summaries(processes: &[ProcessInfo]) -> Vec<UserSummary> {
+    use std::collections::HashMap;
+
+    let mut user_map: HashMap<String, (u32, usize, usize)> = HashMap::new();
+
+    for process in processes {
+        let entry = user_map
+            .entry(process.owner.clone())
+            .or_insert((process.uid, 0, 0));
+        entry.1 += process.fd_count;
+        entry.2 += 1;
+    }
+
+    let mut summaries: Vec<UserSummary> = user_map
+        .into_iter()
+        .map(|(username, (uid, total_fds, process_count))| UserSummary {
+            username,
+            uid,
+            total_fds,
+            process_count,
+        })
+        .collect();
+
+    // Sort by total FDs descending
+    summaries.sort_by(|a, b| b.total_fds.cmp(&a.total_fds));
+
+    summaries
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_compute_user_summaries_empty() {
+        let processes = vec![];
+        let summaries = compute_user_summaries(&processes);
+        assert_eq!(summaries.len(), 0);
+    }
+
+    #[test]
+    fn test_compute_user_summaries_single_user() {
+        let processes = vec![
+            ProcessInfo {
+                pid: 1,
+                ppid: 0,
+                owner: "alice".to_string(),
+                uid: 1000,
+                command: "proc1".to_string(),
+                fd_count: 10,
+                fd_soft_limit: Some(1024),
+                cwd: "/home/alice".to_string(),
+            },
+            ProcessInfo {
+                pid: 2,
+                ppid: 1,
+                owner: "alice".to_string(),
+                uid: 1000,
+                command: "proc2".to_string(),
+                fd_count: 20,
+                fd_soft_limit: Some(1024),
+                cwd: "/home/alice".to_string(),
+            },
+        ];
+
+        let summaries = compute_user_summaries(&processes);
+        assert_eq!(summaries.len(), 1);
+        assert_eq!(summaries[0].username, "alice");
+        assert_eq!(summaries[0].uid, 1000);
+        assert_eq!(summaries[0].total_fds, 30);
+        assert_eq!(summaries[0].process_count, 2);
+    }
+
+    #[test]
+    fn test_compute_user_summaries_multiple_users_sorted() {
+        let processes = vec![
+            ProcessInfo {
+                pid: 1,
+                ppid: 0,
+                owner: "alice".to_string(),
+                uid: 1000,
+                command: "proc1".to_string(),
+                fd_count: 10,
+                fd_soft_limit: Some(1024),
+                cwd: "/home/alice".to_string(),
+            },
+            ProcessInfo {
+                pid: 2,
+                ppid: 0,
+                owner: "bob".to_string(),
+                uid: 1001,
+                command: "proc2".to_string(),
+                fd_count: 50,
+                fd_soft_limit: Some(1024),
+                cwd: "/home/bob".to_string(),
+            },
+            ProcessInfo {
+                pid: 3,
+                ppid: 1,
+                owner: "alice".to_string(),
+                uid: 1000,
+                command: "proc3".to_string(),
+                fd_count: 15,
+                fd_soft_limit: Some(1024),
+                cwd: "/home/alice".to_string(),
+            },
+            ProcessInfo {
+                pid: 4,
+                ppid: 0,
+                owner: "charlie".to_string(),
+                uid: 1002,
+                command: "proc4".to_string(),
+                fd_count: 30,
+                fd_soft_limit: Some(1024),
+                cwd: "/home/charlie".to_string(),
+            },
+        ];
+
+        let summaries = compute_user_summaries(&processes);
+
+        // Should be sorted by total_fds descending: bob(50), charlie(30), alice(25)
+        assert_eq!(summaries.len(), 3);
+        assert_eq!(summaries[0].username, "bob");
+        assert_eq!(summaries[0].total_fds, 50);
+        assert_eq!(summaries[0].process_count, 1);
+
+        assert_eq!(summaries[1].username, "charlie");
+        assert_eq!(summaries[1].total_fds, 30);
+        assert_eq!(summaries[1].process_count, 1);
+
+        assert_eq!(summaries[2].username, "alice");
+        assert_eq!(summaries[2].total_fds, 25);
+        assert_eq!(summaries[2].process_count, 2);
     }
 }
