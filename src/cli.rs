@@ -84,9 +84,13 @@ struct UserSummary {
 /// Main CLI execution dispatcher
 pub fn execute(cmd: Command, format: OutputFormat, current_uid: u32) -> Result<()> {
     match cmd {
-        Command::List { sort, filter, user, min_fds, limit } => {
-            execute_list(format, sort, filter, user, min_fds, limit, current_uid)
-        }
+        Command::List {
+            sort,
+            filter,
+            user,
+            min_fds,
+            limit,
+        } => execute_list(format, sort, filter, user, min_fds, limit, current_uid),
         Command::Tree => execute_tree(format, current_uid),
         Command::Detail { pid } => execute_detail(format, pid, current_uid),
         Command::Stats => execute_stats(format, current_uid),
@@ -166,7 +170,10 @@ fn execute_list(
     current_uid: u32,
 ) -> Result<()> {
     let processes = scan_processes(current_uid)?;
-    let mut entries: Vec<ProcessEntry> = processes.iter().map(ProcessEntry::from_process_info).collect();
+    let mut entries: Vec<ProcessEntry> = processes
+        .iter()
+        .map(ProcessEntry::from_process_info)
+        .collect();
 
     // Filter
     entries = filter_processes(entries, filter, user, min_fds);
@@ -199,12 +206,20 @@ fn execute_list(
             }
         }
         OutputFormat::Table => {
-            println!("{:<8} {:<8} {:<12} {:<8} {:<8} {}", "FDS", "PID", "OWNER", "LIMIT", "USAGE%", "COMMAND");
+            println!(
+                "{:<8} {:<8} {:<12} {:<8} {:<8} {}",
+                "FDS", "PID", "OWNER", "LIMIT", "USAGE%", "COMMAND"
+            );
             println!("{}", "-".repeat(72));
             for entry in entries {
                 println!(
                     "{:<8} {:<8} {:<12} {:<8} {:<8.2} {}",
-                    entry.fds, entry.pid, entry.owner, entry.limit, entry.usage_percent, entry.command
+                    entry.fds,
+                    entry.pid,
+                    entry.owner,
+                    entry.limit,
+                    entry.usage_percent,
+                    entry.command
                 );
             }
         }
@@ -247,7 +262,11 @@ fn execute_tree(format: OutputFormat, current_uid: u32) -> Result<()> {
                     node.process.pid,
                     node.process.command,
                     node.process.fd_count,
-                    if node.is_ancestor_only { " [ancestor]" } else { "" }
+                    if node.is_ancestor_only {
+                        " [ancestor]"
+                    } else {
+                        ""
+                    }
                 );
             }
         }
@@ -300,7 +319,10 @@ fn execute_detail(format: OutputFormat, pid: u32, current_uid: u32) -> Result<()
             println!("Process: {} (PID {})", detail.command, detail.pid);
             println!("Owner: {}", detail.owner);
             println!("CWD: {}", detail.cwd);
-            println!("FD Count: {} / {} ({:.2}%)", detail.fd_count, detail.fd_soft_limit, detail.usage_percent);
+            println!(
+                "FD Count: {} / {} ({:.2}%)",
+                detail.fd_count, detail.fd_soft_limit, detail.usage_percent
+            );
             println!("Timestamp: {}", detail.timestamp);
             println!();
             println!("{:<6} {:<12} {}", "FD", "TYPE", "TARGET");
@@ -355,12 +377,16 @@ fn execute_stats(format: OutputFormat, current_uid: u32) -> Result<()> {
         }
         OutputFormat::Table => {
             println!("System Statistics:");
-            println!("  Allocated FDs: {} / {} ({:.2}%)",
-                output.system.allocated_fds, output.system.max_fds, output.system.usage_percent);
+            println!(
+                "  Allocated FDs: {} / {} ({:.2}%)",
+                output.system.allocated_fds, output.system.max_fds, output.system.usage_percent
+            );
             println!();
             println!("User Statistics ({}):", output.user.username);
-            println!("  Total FDs: {} / {} ({:.2}%)",
-                output.user.total_fds, output.user.soft_limit, output.user.usage_percent);
+            println!(
+                "  Total FDs: {} / {} ({:.2}%)",
+                output.user.total_fds, output.user.soft_limit, output.user.usage_percent
+            );
             println!("  Hard Limit: {}", output.user.hard_limit);
             println!();
             println!("Timestamp: {}", output.timestamp);
@@ -391,7 +417,9 @@ fn execute_summary(format: OutputFormat, current_uid: u32) -> Result<()> {
     let mut user_map: HashMap<String, (u32, usize, usize)> = HashMap::new();
 
     for process in &processes {
-        let entry = user_map.entry(process.owner.clone()).or_insert((process.uid, 0, 0));
+        let entry = user_map
+            .entry(process.owner.clone())
+            .or_insert((process.uid, 0, 0));
         entry.1 += process.fd_count;
         entry.2 += 1;
     }
@@ -427,7 +455,10 @@ fn execute_summary(format: OutputFormat, current_uid: u32) -> Result<()> {
             }
         }
         OutputFormat::Table => {
-            println!("{:<16} {:<8} {:<12} {}", "USERNAME", "UID", "TOTAL_FDS", "PROCESSES");
+            println!(
+                "{:<16} {:<8} {:<12} {}",
+                "USERNAME", "UID", "TOTAL_FDS", "PROCESSES"
+            );
             println!("{}", "-".repeat(72));
             for summary in summaries {
                 println!(

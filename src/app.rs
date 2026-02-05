@@ -1,4 +1,6 @@
-use crate::proc::{read_fd_details, read_system_stats, scan_processes, FdDetail, ProcessInfo, SystemStats};
+use crate::proc::{
+    read_fd_details, read_system_stats, scan_processes, FdDetail, ProcessInfo, SystemStats,
+};
 use crate::tree::{build_tree, TreeNode};
 use anyhow::Result;
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
@@ -148,10 +150,14 @@ impl App {
             KeyCode::Char('-') => {
                 self.adjust_refresh_interval(-1);
             }
-            KeyCode::PageUp | KeyCode::Char('u') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            KeyCode::PageUp | KeyCode::Char('u')
+                if key.modifiers.contains(KeyModifiers::CONTROL) =>
+            {
                 self.scroll_detail_up();
             }
-            KeyCode::PageDown | KeyCode::Char('d') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+            KeyCode::PageDown | KeyCode::Char('d')
+                if key.modifiers.contains(KeyModifiers::CONTROL) =>
+            {
                 self.scroll_detail_down();
             }
             _ => {}
@@ -253,7 +259,9 @@ impl App {
 
     fn initiate_kill(&mut self) {
         // Extract needed values to avoid borrow checker issues
-        let process_info = self.get_selected_process().map(|p| (p.pid, p.uid, p.owner.clone()));
+        let process_info = self
+            .get_selected_process()
+            .map(|p| (p.pid, p.uid, p.owner.clone()));
 
         if let Some((pid, uid, owner)) = process_info {
             if uid != self.current_uid {
@@ -375,10 +383,7 @@ impl App {
                 let filtered = self.get_filtered_processes();
                 filtered.get(self.selected).copied()
             }
-            ViewMode::Tree => self
-                .tree_nodes
-                .get(self.selected)
-                .map(|node| &node.process),
+            ViewMode::Tree => self.tree_nodes.get(self.selected).map(|node| &node.process),
         }
     }
 

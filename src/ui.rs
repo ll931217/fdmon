@@ -36,8 +36,15 @@ fn render_header(frame: &mut Frame, app: &App, area: Rect) {
         ViewMode::Tree => "Table / [Tree]",
     };
 
-    let header = Paragraph::new(format!("fdmon - File Descriptor Monitor         {}", view_indicator))
-        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD));
+    let header = Paragraph::new(format!(
+        "fdmon - File Descriptor Monitor         {}",
+        view_indicator
+    ))
+    .style(
+        Style::default()
+            .fg(Color::Cyan)
+            .add_modifier(Modifier::BOLD),
+    );
 
     frame.render_widget(header, area);
 }
@@ -152,14 +159,11 @@ fn render_table_view(frame: &mut Frame, app: &App, area: Rect) {
         // Add placeholder CWD detail row for selected process
         // (content will be overwritten by buffer overlay below)
         if i == app.selected {
-            let detail_style = Style::default()
-                .fg(Color::Gray)
-                .bg(Color::DarkGray);
+            let detail_style = Style::default().fg(Color::Gray).bg(Color::DarkGray);
 
             // Placeholder row — just reserves vertical space
-            let empty_cells: Vec<Cell> = (0..6)
-                .map(|_| Cell::from("").style(detail_style))
-                .collect();
+            let empty_cells: Vec<Cell> =
+                (0..6).map(|_| Cell::from("").style(detail_style)).collect();
             rows.push(Row::new(empty_cells));
         }
     }
@@ -199,7 +203,12 @@ fn render_table_view(frame: &mut Frame, app: &App, area: Rect) {
                 buf.set_string(x_start, cwd_y, &padding, style);
 
                 // Then overlay the cwd text
-                buf.set_string(x_start, cwd_y, &cwd_text[..cwd_text.len().min(max_width)], style);
+                buf.set_string(
+                    x_start,
+                    cwd_y,
+                    &cwd_text[..cwd_text.len().min(max_width)],
+                    style,
+                );
             }
         }
     }
@@ -243,18 +252,16 @@ fn render_tree_view(frame: &mut Frame, app: &App, area: Rect) {
 
 fn render_detail_panel(frame: &mut Frame, app: &App, area: Rect) {
     let title_base = match app.view {
-        ViewMode::Tree => {
-            app.tree_nodes
-                .get(app.selected)
-                .map(|node| format!("FD Details: PID {}", node.process.pid))
-                .unwrap_or_else(|| "FD Details".to_string())
-        }
-        ViewMode::Table => {
-            app.get_filtered_processes()
-                .get(app.selected)
-                .map(|p| format!("FD Details: PID {}", p.pid))
-                .unwrap_or_else(|| "FD Details".to_string())
-        }
+        ViewMode::Tree => app
+            .tree_nodes
+            .get(app.selected)
+            .map(|node| format!("FD Details: PID {}", node.process.pid))
+            .unwrap_or_else(|| "FD Details".to_string()),
+        ViewMode::Table => app
+            .get_filtered_processes()
+            .get(app.selected)
+            .map(|p| format!("FD Details: PID {}", p.pid))
+            .unwrap_or_else(|| "FD Details".to_string()),
     };
 
     // Add scroll indicator to title
@@ -327,7 +334,8 @@ fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
         };
         Paragraph::new(msg.clone()).style(Style::default().fg(color))
     } else {
-        let keys = "q:Quit  K:Kill  Tab:View  /:Search  Enter:Details  ↑↓:Nav  s:Sort  +/-:Interval";
+        let keys =
+            "q:Quit  K:Kill  Tab:View  /:Search  Enter:Details  ↑↓:Nav  s:Sort  +/-:Interval";
         Paragraph::new(keys).style(Style::default().fg(Color::Gray))
     };
 
@@ -343,13 +351,13 @@ fn render_search_input(frame: &mut Frame, app: &App) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Filter (Enter to apply, Esc to cancel)")
-                .style(Style::default().bg(Color::Black).fg(Color::White))
+                .style(Style::default().bg(Color::Black).fg(Color::White)),
         );
 
     // Clear the background area first
     frame.render_widget(
         Block::default().style(Style::default().bg(Color::Black)),
-        area
+        area,
     );
     frame.render_widget(input, area);
 }
@@ -384,7 +392,7 @@ fn render_kill_confirm(frame: &mut Frame, app: &App) {
             Block::default()
                 .borders(Borders::ALL)
                 .title("Confirm Kill")
-                .style(Style::default().bg(Color::Black).fg(Color::White))
+                .style(Style::default().bg(Color::Black).fg(Color::White)),
         )
         .alignment(Alignment::Center)
         .wrap(Wrap { trim: true })
@@ -393,7 +401,7 @@ fn render_kill_confirm(frame: &mut Frame, app: &App) {
     // Clear the background area first
     frame.render_widget(
         Block::default().style(Style::default().bg(Color::Black)),
-        area
+        area,
     );
     frame.render_widget(popup, area);
 }

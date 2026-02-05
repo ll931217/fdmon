@@ -15,10 +15,8 @@ pub struct TreeNode {
 pub fn build_tree(processes: &[ProcessInfo]) -> Vec<TreeNode> {
     // Build parent-child mapping
     let mut children_map: HashMap<u32, Vec<u32>> = HashMap::new();
-    let process_map: HashMap<u32, ProcessInfo> = processes
-        .iter()
-        .map(|p| (p.pid, p.clone()))
-        .collect();
+    let process_map: HashMap<u32, ProcessInfo> =
+        processes.iter().map(|p| (p.pid, p.clone())).collect();
 
     for process in processes {
         children_map
@@ -69,11 +67,7 @@ pub fn build_tree(processes: &[ProcessInfo]) -> Vec<TreeNode> {
 }
 
 /// Marks all ancestors of a process
-fn mark_ancestors(
-    pid: u32,
-    process_map: &HashMap<u32, ProcessInfo>,
-    marked: &mut HashSet<u32>,
-) {
+fn mark_ancestors(pid: u32, process_map: &HashMap<u32, ProcessInfo>, marked: &mut HashSet<u32>) {
     if let Some(process) = process_map.get(&pid) {
         let ppid = process.ppid;
         if ppid != 0 && process_map.contains_key(&ppid) {
@@ -133,4 +127,3 @@ fn build_tree_recursive(
         );
     }
 }
-

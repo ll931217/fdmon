@@ -17,6 +17,41 @@
 
 ## Installation
 
+### Quick Install (Recommended)
+
+Install the latest version with a single command:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ll931217/fdmon/master/install.sh | bash
+```
+
+This will automatically detect your platform and install the appropriate binary to `~/.local/bin/`.
+
+### Manual Installation
+
+Download the binary for your platform from the [releases page](https://github.com/ll931217/fdmon/releases):
+
+**Linux (x86_64):**
+```bash
+curl -fsSL https://github.com/ll931217/fdmon/releases/latest/download/fdmon-linux-x86_64 -o fdmon
+chmod +x fdmon
+sudo mv fdmon /usr/local/bin/
+```
+
+**macOS (Intel):**
+```bash
+curl -fsSL https://github.com/ll931217/fdmon/releases/latest/download/fdmon-darwin-x86_64 -o fdmon
+chmod +x fdmon
+sudo mv fdmon /usr/local/bin/
+```
+
+**macOS (Apple Silicon):**
+```bash
+curl -fsSL https://github.com/ll931217/fdmon/releases/latest/download/fdmon-darwin-aarch64 -o fdmon
+chmod +x fdmon
+sudo mv fdmon /usr/local/bin/
+```
+
 ### From Source
 
 ```bash
@@ -26,8 +61,7 @@ cargo build --release
 sudo cp target/release/fdmon /usr/local/bin/
 ```
 
-### Prerequisites
-
+**Prerequisites:**
 - Rust 1.70 or later
 - Linux kernel 2.6.22+ (for /proc filesystem)
 
