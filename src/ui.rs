@@ -323,7 +323,6 @@ fn render_footer(frame: &mut Frame, app: &App, area: Rect) {
     let bottom_line = if let Some((msg, level)) = &app.status_message {
         let color = match level {
             StatusLevel::Info => Color::Green,
-            StatusLevel::Warning => Color::Yellow,
             StatusLevel::Error => Color::Red,
         };
         Paragraph::new(msg.clone()).style(Style::default().fg(color))

@@ -1,8 +1,9 @@
 use anyhow::{Context, Result};
+use serde::Serialize;
 use std::fs;
 use std::path::PathBuf;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct ProcessInfo {
     pub pid: u32,
     pub ppid: u32,
@@ -14,7 +15,8 @@ pub struct ProcessInfo {
     pub cwd: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "lowercase")]
 pub enum FdType {
     Socket,
     Pipe,
@@ -23,14 +25,26 @@ pub enum FdType {
     Other,
 }
 
-#[derive(Debug, Clone)]
+impl std::fmt::Display for FdType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FdType::Socket => write!(f, "socket"),
+            FdType::Pipe => write!(f, "pipe"),
+            FdType::File => write!(f, "file"),
+            FdType::Device => write!(f, "device"),
+            FdType::Other => write!(f, "other"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct FdDetail {
     pub fd_num: u32,
     pub target: String,
     pub fd_type: FdType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SystemStats {
     pub allocated_fds: u64,
     pub max_fds: u64,

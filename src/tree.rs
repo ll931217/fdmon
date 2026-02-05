@@ -1,7 +1,8 @@
 use crate::proc::ProcessInfo;
+use serde::Serialize;
 use std::collections::{HashMap, HashSet};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct TreeNode {
     pub process: ProcessInfo,
     pub depth: usize,
@@ -133,24 +134,3 @@ fn build_tree_recursive(
     }
 }
 
-/// Toggles expansion state of a tree node
-pub fn toggle_expand(tree_nodes: &[TreeNode], index: usize) -> Vec<TreeNode> {
-    if index >= tree_nodes.len() {
-        return tree_nodes.to_vec();
-    }
-
-    let mut result = tree_nodes.to_vec();
-    result[index].expanded = !result[index].expanded;
-
-    // If collapsing, hide children
-    if !result[index].expanded {
-        let target_depth = result[index].depth;
-        let i = index + 1;
-
-        while i < result.len() && result[i].depth > target_depth {
-            result.remove(i);
-        }
-    }
-
-    result
-}

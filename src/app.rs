@@ -30,7 +30,6 @@ pub enum SortColumn {
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum StatusLevel {
     Info,
-    Warning,
     Error,
 }
 
